@@ -21,7 +21,7 @@
 ## 1. Introduction: Why Workflow Automation? Why Snakemake?<a name="1"></a>
 Workflow automation means using software to coordinate and execute a series of tasks without constant human input. Instead of manually running one tool after another and tracking files, conditions, and paths by hand, an automated workflow system ensures that tasks are run in the correct order and using the right data. Snakemake is a popular workflow management tool for computational biology due to its simplicity, focus on reproducibility, and scalability. It solves many of the key issues that bash scripts tend to have. 
 
-![alt text](https://)
+![alt text](snakemaketraits.png)
 
 #### **Snakemake is designed to be sustainable, surive interruptions, and evolve with new data and processes**
 - **Automation**: Snakemake automatically figures out which steps to run, in which order, based on declared inputs/outputs and the target files you ask for, instead of manually chaining commands.  
@@ -32,7 +32,7 @@ Workflow automation means using software to coordinate and execute a series of t
 - **Documentation**: The combination of clear rule names, config files, environment specs, and built-in reporting (e.g. `--report`) means the workflow itself serves as executable documentation of the entire analysis.  
 
 ## 2. RNA-seq & Typical Pipelines<a name="2"></a>
-
+<img src="inclassrnaseqexample.png" alt="alt text" width="200"/>
 
 ## 3. Snakemake Basics: Rules, DAGs, and Wildcards<a name="3"></a>
 
@@ -41,10 +41,10 @@ Workflow automation means using software to coordinate and execute a series of t
 
 
 ## 5. Worked Example: RNA-seq Pipeline in Snakemake<a name="5"></a>
-
+![alt text](exampledagworkflow.png)
 
 ## 6. Limitations and Extensions<a name="6"></a>
-
+<img src="snakemakecitationsovertime.png" alt="alt text" width="300"/>
 
 ## 7. Alternative Workflow Managers<a name="7"></a>
 
