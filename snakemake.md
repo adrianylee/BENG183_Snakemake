@@ -23,8 +23,8 @@ parameters, and intermediate outputs, an automated workflow framework ensures th
 order and with the appropriate inputs. **Snakemake** has become a widely adopted workflow management system in computational 
 biology because of its clear syntax, strong emphasis on reproducibility, and ability to scale from single-machine analyses 
 to large high-performance computing environments. By formally defining dependencies and execution logic, Snakemake addresses 
-many limitations inherent to traditional ad hoc bash pipelines—such as fragility, lack of provenance tracking, and 
-difficulty scaling—while providing a robust and transparent foundation for sustainable data analysis.
+many limitations inherent to traditional ad hoc bash pipelines, such as fragility, lack of provenance tracking, and 
+difficulty scaling, while providing a robust and transparent foundation for sustainable data analysis.
 
 ![alt text](snakemaketraits.png)
 
@@ -81,13 +81,7 @@ intermediate files and rules must be executed. This makes workflows clean, decla
 ### 3.2 DAG Construction & Incremental Runs <a name="32"></a>
 
 Snakemake uses the relationships between rule inputs and outputs to construct a **Directed Acyclic Graph (DAG)**, where 
-each 
-job is a node and edges represent dependencies. The DAG dictates execution order, enabling Snakemake to run independent 
-jobs 
-in parallel and skip any steps whose outputs are already up to date. Tools such as `--dag`, `--rulegraph`, and `--dry-run` 
-make it easy to visualize or validate the workflow before executing it. For cases where output filenames or counts aren’t 
-known until runtime, Snakemake offers **checkpoints**, which pause DAG creation, inspect dynamic outputs, and then expand 
-the graph accordingly.
+each job is a node and edges represent dependencies. The DAG dictates execution order, enabling Snakemake to run independent jobs in parallel and skip any steps whose outputs are already up to date. Tools such as `--dag`, `--rulegraph`, and `--dry-run` make it easy to visualize or validate the workflow before executing it. For cases where output filenames or counts aren’t known until runtime, Snakemake offers **checkpoints**, which pause DAG creation, inspect dynamic outputs, and then expand the graph accordingly.
 
 ### 3.3 Wildcards <a name="33"></a>
 
@@ -128,18 +122,18 @@ like RNA-seq, ChIP-seq, ATAC-seq, variant calling, metagenomics, and more. Many 
 Snakemake team or by broader bioinformatics groups, which makes it much easier for new users to adopt best practices 
 without reinventing the pipeline from scratch. It’s also worth highlighting alternatives such as **Nextflow**, **CWL**, and 
 **WDL/Cromwell**, which are widely used in other research communities and large consortia. These workflow engines share 
-many goals—reproducibility, portability, sustainability—but differ in syntax, execution models, and strengths (e.g., 
+many goals—reproducibility, portability, sustainability, but differ in syntax, execution models, and strengths (e.g., 
 Nextflow’s tight container integration and cloud support). In practice, Snakemake remains one of the most accessible and 
 beginner-friendly workflow systems, especially in academic bioinformatics, while still offering enough flexibility and 
 reproducibility features for large-scale and long-term projects.
 
 However, we ultimately selected **Snakemake** because of its accessibility and smooth learning curve. Analyses of workflow 
-complexity show that the majority of lines in a typical Snakefile fall into **complexity level 1**—simple rule declarations 
-or keyword–colon structures—while only a small fraction reach **complexity level 7**, which corresponds to full Python 
-expressions. In practice, this means that users can build functional, well-structured workflows without needing extensive 
-programming experience, and only incorporate more advanced Python logic as their projects grow. This balance of simplicity 
-and extensibility makes Snakemake particularly well-suited for teaching, onboarding new lab members, and maintaining long-
-term sustainable workflows.
+complexity show that the majority of lines in a typical Snakefile fall into **complexity level 1**, simple rule 
+declarations or keyword–colon structures—while only a small fraction reach **complexity level 7**, which corresponds to 
+full Python expressions. In practice, this means that users can build functional, well-structured workflows without needing 
+extensive programming experience, and only incorporate more advanced Python logic as their projects grow. This balance of 
+simplicity and extensibility makes Snakemake particularly well-suited for teaching, onboarding new lab members, and 
+maintaining long-term sustainable workflows.
 
 <img src="snakemakecitationsovertime.png" alt="alt text" width="300"/>
 
