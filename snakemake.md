@@ -43,7 +43,24 @@ output was generated (DAG, rulegraph, logs), enabling you to trace results back 
 report`) means the workflow itself serves as executable documentation of the entire analysis.  
 
 ## 2. RNA-seq & Typical Pipelines<a name="2"></a>
+RNA sequencing (RNA-seq) is a widely used method for measuring gene expression by profiling the RNA molecules present in a 
+biological sample. In practice, an RNA-seq experiment produces raw sequencing reads in FASTQ format, which must pass 
+through several computational stages before meaningful biological interpretation is possible. A standard workflow begins 
+with quality assessment using tools such as FastQC or fastp, followed by optional trimming to remove adapters or low-
+quality bases. The cleaned reads are then processed either through traditional genome alignment (e.g., STAR, HISAT2, 
+Bowtie2) or through faster pseudoalignment approaches (e.g., Salmon, Kallisto) that quantify transcript abundance without 
+generating full alignments. Gene- or transcript-level counts are subsequently derived using tools such as featureCounts or 
+tximport, and these counts feed into statistical methods like DESeq2 for differential expression analysis. Outputs 
+typically include normalized expression matrices, diagnostic plots, and multi-sample summaries, often consolidated through 
+MultiQC.
+
 <img src="inclassrnaseqexample.png" alt="alt text" width="200"/>
+
+Although conceptually straightforward, RNA-seq analysis involves many interdependent steps and dozens of intermediate 
+files, making manual execution fragile and difficult to scale. The workflow must also adapt to varying sample numbers, 
+library types, reference genomes, and computational environments. These characteristics make RNA-seq an ideal case for 
+workflow automation: a system like Snakemake provides structure, reproducibility, and scalability by formally defining how 
+each step connects, ensuring that results are generated consistently and transparently across projects and platforms.
 
 ## 3. Snakemake Basics: Rules, DAGs, and Wildcards <a name="3"></a>
 
@@ -92,7 +109,6 @@ dag`, `--rulegraph`, and HTML reports generated via `--report`.
 
 Together, these components form the foundation of Snakemake’s workflow model, enabling clean, scalable, and highly 
 reproducible analyses across diverse computational environments.
-
 
 ## 4. Worked Example: RNA-seq Pipeline in Snakemake<a name="4"></a>
 ![alt text](exampledagworkflow.png)
