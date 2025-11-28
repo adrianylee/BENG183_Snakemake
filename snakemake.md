@@ -85,7 +85,7 @@ each job is a node and edges represent dependencies. The DAG dictates execution 
 
 ### 3.3 Wildcards <a name="33"></a>
 
-**Wildcards**—such as `{sample}` or `{chr}`—allow a single rule to operate on multiple files without duplication. Snakemake 
+**Wildcards** such as `{sample}` or `{chr}`—allow a single rule to operate on multiple files without duplication. Snakemake 
 automatically infers wildcard values based on matching file patterns. For example, if the rule expects an input 
 `mapped_reads/{sample}.bam` and you have a file `mapped_reads/B.bam`, Snakemake assigns `{sample} = B`. Wildcards also work 
 inside shell commands using `{wildcards.sample}`, enabling highly scalable pipelines that adapt seamlessly as sample lists 
@@ -108,8 +108,8 @@ reproducible analyses across diverse computational environments.
 ![alt text](exampledagworkflow.png)
 
 ## 5. Limitations, Extensions, and Switching to Snakemake<a name="5"></a>
-Even though Snakemake is powerful, it does come with certain limitations. Checkpoints—while extremely useful for handling 
-dynamic or unknown inputs—can be tricky to implement correctly. They require careful planning, and if the logic that 
+Even though Snakemake is powerful, it does come with certain limitations. Checkpoints, while extremely useful for handling 
+dynamic or unknown inputs can be tricky to implement correctly. They require careful planning, and if the logic that 
 determines downstream files is even slightly off, Snakemake may produce a malformed DAG or fail with confusing errors. 
 Another fundamental limitation is that Snakemake workflows must be **acyclic**, meaning you cannot express iterative or 
 recursive algorithms directly in the workflow graph. Any looped or cyclical process must be handled inside a script rather 
@@ -122,14 +122,14 @@ like RNA-seq, ChIP-seq, ATAC-seq, variant calling, metagenomics, and more. Many 
 Snakemake team or by broader bioinformatics groups, which makes it much easier for new users to adopt best practices 
 without reinventing the pipeline from scratch. It’s also worth highlighting alternatives such as **Nextflow**, **CWL**, and 
 **WDL/Cromwell**, which are widely used in other research communities and large consortia. These workflow engines share 
-many goals—reproducibility, portability, sustainability, but differ in syntax, execution models, and strengths (e.g., 
+many goals: reproducibility, portability, sustainability, but differ in syntax, execution models, and strengths (e.g., 
 Nextflow’s tight container integration and cloud support). In practice, Snakemake remains one of the most accessible and 
 beginner-friendly workflow systems, especially in academic bioinformatics, while still offering enough flexibility and 
 reproducibility features for large-scale and long-term projects.
 
 However, we ultimately selected **Snakemake** because of its accessibility and smooth learning curve. Analyses of workflow 
 complexity show that the majority of lines in a typical Snakefile fall into **complexity level 1**, simple rule 
-declarations or keyword–colon structures—while only a small fraction reach **complexity level 7**, which corresponds to 
+declarations or keyword–colon structures, while only a small fraction reach **complexity level 7**, which corresponds to 
 full Python expressions. In practice, this means that users can build functional, well-structured workflows without needing 
 extensive programming experience, and only incorporate more advanced Python logic as their projects grow. This balance of 
 simplicity and extensibility makes Snakemake particularly well-suited for teaching, onboarding new lab members, and 
