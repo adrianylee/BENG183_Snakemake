@@ -1,0 +1,219 @@
+import os
+import pandas as pd
+
+SAMPLES = pd.read_csv(config["samples_tsv"], sep="\t")
+SAMPLE_IDS = SAMPLES["sample"].unique().tolist()
+
+PE   = bool(config.get("paired_end", True))
+TRIM = bool(config.get("do_trimming", True))
+
+OUTDIR = config["outdir"]
+
+REF    = config["ref"]["human"]
+STRAND = int(config.get("strandedness", 0)) 
+
+def fq1(wildcards):
+    """Return list of R1 FASTQ paths for a given sample."""
+    df_sample = SAMPLES[SAMPLES["sample"] == wildcards.sample]
+    return df_sample["r1"].tolist()
+
+
+def fq2(wildcards):
+    """Return list of R2 FASTQ paths for a given sample (if paired-end)."""
+    df_sample = SAMPLES[SAMPLES["sample"] == wildcards.sample]
+    if not PE:
+        return []
+    else:
+        return df_sample["r2"].tolist()
+
+
+def reads_for_alignment(wildcards):
+    """
+    Helper to abstract over 'merged' vs 'trimmed' FASTQs,
+    depending on whether trimming is enabled.
+    """
+    if TRIM:
+        r1 = f"{OUTDIR}/{wildcards.sample}/trimmed/{wildcards.sample}.R1.fq.gz"
+        r2 = f"{OUTDIR}/{wildcards.sample}/trimmed/{wildcards.sample}.R2.fq.gz" if PE else ""
+    else:
+        r1 = f"{OUTDIR}/{wildcards.sample}/merged/{wildcards.sample}.R1.fq.gz"
+        r2 = f"{OUTDIR}/{wildcards.sample}/merged/{wildcards.sample}.R2.fq.gz" if PE else ""
+    return r1, r2
+
+#Rule All
+rule all:
+    input:
+        expand(f"{OUTDIR}/{{sample}}/salmon/tpm.csv", sample=SAMPLE_IDS),
+        directory(REF["salmon_index"])
+
+rule build_salmon_index:
+    input:
+        directory(REF["salmon_index"])
+
+# FastQC
+rule fastqc:
+    conda: "envs/rna.yml"
+    threads: config["threads"]["fastqc"]
+    input:
+        r1 = lambda w: fq1(w),
+        r2 = lambda w: fq2(w)
+    output:
+        # Merged / re-compressed per-sample FASTQs
+        r1    = temp(f"{OUTDIR}/{{sample}}/merged/{{sample}}.R1.fq.gz"),
+        r2    = (
+            temp(f"{OUTDIR}/{{sample}}/merged/{{sample}}.R2.fq.gz")
+            if PE else touch(f"{OUTDIR}/{{sample}}/merged/{{sample}}.R2.fq.gz")
+        ),
+        # FastQC reports
+        html1 = f"{OUTDIR}/{{sample}}/qc/fastqc/{{sample}}.R1_fastqc.html",
+        zip1  = f"{OUTDIR}/{{sample}}/qc/fastqc/{{sample}}.R1_fastqc.zip",
+        html2 = (
+            f"{OUTDIR}/{{sample}}/qc/fastqc/{{sample}}.R2_fastqc.html"
+            if PE else f"{OUTDIR}/{{sample}}/qc/fastqc/{{sample}}.R2_fastqc.html"
+        ),
+        zip2  = (
+            f"{OUTDIR}/{{sample}}/qc/fastqc/{{sample}}.R2_fastqc.zip"
+            if PE else f"{OUTDIR}/{{sample}}/qc/fastqc/{{sample}}.R2_fastqc.zip"
+        )
+    params:
+        merge_dir  = f"{OUTDIR}/{{sample}}/merged",
+        fastqc_dir = f"{OUTDIR}/{{sample}}/qc/fastqc"
+    shell:
+        r"""
+        mkdir -p {params.merge_dir}
+        zcat {input.r1} | pigz -p {threads} > {output.r1}
+
+        if [ -n "{input.r2}" ] && [ "{PE}" = "True" ]; then
+            zcat {input.r2} | pigz -p {threads} > {output.r2}
+        else
+            :  # no-op for single-end data
+        fi
+
+        mkdir -p {params.fastqc_dir}
+        fastqc -t {threads} -o {params.fastqc_dir} {output.r1} {output.r2}
+        """
+
+# Trimming (fastp)
+
+rule fastp:
+    conda: "envs/rna.yml"
+    threads: config["threads"]["fastp"]
+    input:
+        r1 = f"{OUTDIR}/{{sample}}/merged/{{sample}}.R1.fq.gz",
+        r2 = f"{OUTDIR}/{{sample}}/merged/{{sample}}.R2.fq.gz"
+    output:
+        r1   = f"{OUTDIR}/{{sample}}/trimmed/{{sample}}.R1.fq.gz",
+        r2   = (
+            f"{OUTDIR}/{{sample}}/trimmed/{{sample}}.R2.fq.gz"
+            if PE else touch(f"{OUTDIR}/{{sample}}/trimmed/{{sample}}.R2.fq.gz")
+        ),
+        html = f"{OUTDIR}/{{sample}}/trimmed/{{sample}}.fastp.html",
+        json = f"{OUTDIR}/{{sample}}/trimmed/{{sample}}.fastp.json"
+    params:
+        extra    = "--detect_adapter_for_pe" if PE else "",
+        trim_dir = f"{OUTDIR}/{{sample}}/trimmed"
+    shell:
+        r"""
+        mkdir -p {params.trim_dir}
+        fastp -w {threads} \
+              -i {input.r1} -I {input.r2} \
+              -o {output.r1} -O {output.r2} {params.extra} \
+              --html {output.html} --json {output.json}
+        """
+
+# Salmon
+
+rule salmon_index:
+    conda: "envs/rna.yml"
+    threads: config["threads"]["salmon_index"]
+    input:
+        gencode_transcriptome_fa = REF["transcriptome_fa"],
+        gencode_genome_fa        = REF["genome_fa"]
+    output:
+        directory(REF["salmon_index"])
+    log:
+        f"{OUTDIR}/salmon_index.log"
+    shell:
+        r"""
+        mkdir -p {output}
+
+        echo "Creating: {output}/gentrome.fa"
+        zcat {input.gencode_transcriptome_fa} {input.gencode_genome_fa} > {output}/gentrome.fa
+        echo "Finished: gentrome.fa"
+
+        echo "Creating: {output}/decoys.txt"
+        zcat {input.gencode_genome_fa} \
+            | grep "^>" \
+            | cut -d " " -f1 \
+            | sed 's/>//g' > {output}/decoys.txt
+        echo "Finished: decoys.txt"
+
+        echo "Running salmon index ..."
+        salmon index \
+            -t {output}/gentrome.fa \
+            -d {output}/decoys.txt \
+            -p {threads} \
+            -i {output} > {log} 2>&1
+        """
+
+
+# Salmon quantification
+
+rule salmon_quant:
+    conda: "envs/rna.yml"
+    threads: config["threads"]["salmon"]
+    input:
+        idx = directory(REF["salmon_index"]),
+        r1  = f"{OUTDIR}/{{sample}}/trimmed/{{sample}}.R1.fq.gz",
+        r2  = f"{OUTDIR}/{{sample}}/trimmed/{{sample}}.R2.fq.gz"
+    output:
+        f"{OUTDIR}/{{sample}}/salmon/quant.sf"
+    params:
+        outdir      = f"{OUTDIR}/{{sample}}/salmon",
+        sample_name = "{sample}"
+    log:
+        f"{OUTDIR}/{{sample}}/salmon/log_salmon.txt"
+    shell:
+        r"""
+        salmon quant \
+            -i {input.idx} -l A \
+            -1 {input.r1} -2 {input.r2} \
+            --validateMappings --gcBias --seqBias \
+            -p {threads} -o {params.outdir} \
+            > {log} 2>&1
+        """
+
+# tx2gene
+
+rule build_tx2gene:
+    conda: "envs/r_env.yml"
+    threads: 2
+    input:
+        REF["gtf"]
+    output:
+        REF["tx2gene"]
+    log:
+        f"{OUTDIR}/build_tx2gene.log"
+    shell:
+        r"""
+        which Rscript
+        Rscript scripts/build_tx2gene.r {input} {output} > {log} 2>&1
+        """
+
+
+# TPMs
+
+rule convert_tpm:
+    conda: "envs/r_env.yml"
+    threads: 2
+    input:
+        salmon  = f"{OUTDIR}/{{sample}}/salmon/quant.sf",
+        tx2gene = REF["tx2gene"]
+    output:
+        f"{OUTDIR}/{{sample}}/salmon/tpm.csv"
+    log:
+        f"{OUTDIR}/{{sample}}/salmon/to_tpm.log"
+    shell:
+        r"""
+        Rscript scripts/to_tpm.r {input.salmon} {input.tx2gene} {output} > {log} 2>&1
+        """
