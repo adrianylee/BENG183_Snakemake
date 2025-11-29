@@ -6,13 +6,15 @@
 1. [Introduction: Why Workflow Automation? Why Snakemake?](#1)  
 2. [RNA-seq & Typical Pipelines](#2)  
 3. [Snakemake Basics: Rules, DAGs, and Wildcards](#3)  
+   3.0. [Getting Started](#30)  
    3.1. [Rules & `rule all`](#31)  
    3.2. [DAG Construction & Incremental Runs](#32)  
    3.3. [Wildcards](#33)  
    3.4. [Configs, Resources, and Execution Backends](#34)  
 4. [Worked Example: RNA-seq Pipeline in Snakemake](#4)  
 5. [Limitations, Extensions, and Switching to Snakemake](#5)  
-6. [References](#6)  
+6. [Further Applications](#6)  
+7. [References](#7)  
 
 ---
 
@@ -28,7 +30,7 @@ difficulty scaling, while providing a robust and transparent foundation for sust
 
 ![alt text](snakemaketraits.png)
 
-#### **Snakemake is designed to be sustainable, surive interruptions, and evolve with new data and processes**
+#### **Snakemake is designed to be sustainable, survive interruptions, and evolve with new data and processes**
 - **Automation**: Snakemake automatically figures out which steps to run, in which order, based on declared inputs/outputs
 and the target files you ask for, instead of manually chaining commands.  
 - **Scalability**: The same Snakefile can scale from a few samples on a laptop to hundreds on an HPC cluster by
@@ -70,7 +72,53 @@ is achieved through rules, wildcards, and the construction of a Directed Acyclic
 steps. Together, these components make Snakemake flexible, scalable, and intuitive, even for users with limited programming 
 experience.
 
-### 3.1 Rules & `rule all` <a name="31"></a>
+### 3.0 Getting Started<a name="30"></a>
+
+#### Installation: Conda
+conda create -n snakemake -c conda-forge -c bioconda snakemake
+conda activate snakemake
+
+#### Installation: Mamba
+mamba create -n snakemake snakemake -c conda-forge -c bioconda
+mamba activate snakemake
+
+---
+
+An example minimal Snakemake project contains:
+
+project/
+
+│── Snakefile
+
+│── config.yaml
+
+│── envs/
+
+│ └── rnaseq.yaml
+
+│── scripts/
+
+│ └── helper.py
+
+│── data/
+
+│ └── sample1_R1.fastq.gz
+
+│── results/
+
+---
+
+#### Running Snakemake (local):
+snakemake --cores 4
+
+#### Running Snakemake on HPC:
+snakemake --profile profiles/sge
+
+#### Running Snakemake on SLURM:
+snakemake --cluster “"sbatch -t {resources.time} -c {threads}" --jobs 50
+
+
+### 3.1 Rules & `rule all`<a name="31"></a>
 
 In Snakemake, **rules** define transformations from input files to output files, rather than dictating explicit step-by-step 
 execution. Each rule includes fields such as `input`, `output`, `params`, `threads`, `resources`, and a `shell` or `run` 
@@ -78,12 +126,12 @@ block that performs the actual operation. Most workflows also include a top-leve
 final outputs of the pipeline. Snakemake uses these targets as the endpoint, working backward to determine which 
 intermediate files and rules must be executed. This makes workflows clean, declarative, and highly modular.
 
-### 3.2 DAG Construction & Incremental Runs <a name="32"></a>
+### 3.2 DAG Construction & Incremental Runs<a name="32"></a>
 
 Snakemake uses the relationships between rule inputs and outputs to construct a **Directed Acyclic Graph (DAG)**, where 
 each job is a node and edges represent dependencies. The DAG dictates execution order, enabling Snakemake to run independent jobs in parallel and skip any steps whose outputs are already up to date. Tools such as `--dag`, `--rulegraph`, and `--dry-run` make it easy to visualize or validate the workflow before executing it. For cases where output filenames or counts aren’t known until runtime, Snakemake offers **checkpoints**, which pause DAG creation, inspect dynamic outputs, and then expand the graph accordingly.
 
-### 3.3 Wildcards <a name="33"></a>
+### 3.3 Wildcards<a name="33"></a>
 
 **Wildcards** such as `{sample}` or `{chr}`—allow a single rule to operate on multiple files without duplication. Snakemake 
 automatically infers wildcard values based on matching file patterns. For example, if the rule expects an input 
@@ -137,7 +185,13 @@ maintaining long-term sustainable workflows.
 
 <img src="snakemakecitationsovertime.png" alt="alt text" width="300"/>
 
-## 6. References<a name="6"></a>
+## 6. Further Applications<a name="6"></a>
+
+Snakemake is useful beyond RNA-seq in applications across genomics, single-cell analysis, structural biology, clinical pipelines, teaching, and machine learning. Here are some additional Snakemake pipeline DAGs for alternative pipelines within computational biology:
+
+
+
+## 7. References<a name="7"></a>
 [1] Mölder, F., Jablonski, K. P., Letcher, B., Hall, M. B., Tomkins-Tinch, C. H., Sochat, V., *et al.* (2021). 
 **Sustainable data analysis with Snakemake**. *F1000Research*, 10:33.  
     https://pmc.ncbi.nlm.nih.gov/articles/PMC8114187/
