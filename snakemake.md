@@ -134,4 +134,4 @@ As mentioned previously, snakemake is useful beyond RNA-seq in applications acro
 [2] **Snakemake Documentation**.  
     https://snakemake.readthedocs.io/en/stable/
 
-[3] M. tuberculosis Bioinformatics Workshop — “Welcome to Bioinformatics Workshop for M. tuberculosis genomics and phylogenomics at The Philippine Genome Center (July 9–14 2018)” (mtbgenomicsworkshop.readthedocs.io)
+[3] M. tuberculosis Bioinformatics Workshop. (2018). Welcome to bioinformatics workshop for M. tuberculosis genomics and phylogenomics at the Philippine Genome Center. https://mtbgenomicsworkshop.readthedocs.io/en/latest/index.html
