@@ -3,22 +3,29 @@
 
 ---
 
-1. [Introduction: Why Workflow Automation? Why Snakemake?](#1)  
-2. [RNA-seq & Typical Pipelines](#2)  
-3. [Snakemake Basics: Rules, DAGs, and Wildcards](#3)  
-   3.0. [Getting Started](#30)  
-   3.1. [Rules & `rule all`](#31)  
-   3.2. [DAG Construction & Incremental Runs](#32)  
-   3.3. [Wildcards](#33)  
-   3.4. [Configs, Resources, and Execution Backends](#34)  
-4. [Worked Example: RNA-seq Pipeline in Snakemake](#4)  
-5. [Limitations, Extensions, and Switching to Snakemake](#5)  
-6. [Further Applications](#6)  
-7. [References](#7)  
+1. [Abstract](#1)
+2. [Introduction: Why Workflow Automation? Why Snakemake?](#2)  
+3. [RNA-seq & Typical Pipelines](#3)  
+4. [Snakemake Basics: Rules, DAGs, and Wildcards](#4)  
+   3.0. [Getting Started](#40)  
+   3.1. [Rules & `rule all`](#41)  
+   3.2. [DAG Construction & Incremental Runs](#42)  
+   3.3. [Wildcards](#43)  
+   3.4. [Configs, Resources, and Execution Backends](#44)  
+5. [Worked Example: RNA-seq Pipeline in Snakemake](#5)  
+   5.0. [Simplified Snakefile](#50) 
+6. [Limitations, Extensions, and Switching to Snakemake](#6)  
+7. [Further Applications](#7)
+8. [References](#8)  
 
 ---
 
-## 1. Introduction: Why Workflow Automation? Why Snakemake?<a name="1"></a>
+## 1. Abstract<a name="1"></a>
+The growth of high-throughput sequencing has made reproducible and scalable computational workflows essential for modern biological research. RNA sequencing (henceforth referred to as RNA-seq), in particular, involves many interdependent steps that can be difficult or tedious to rerun manually with things such as bash scripts. Snakemake is a workflow management system that addresses these challenges by providing a declarative, rule-based syntax for linking tasks, tracking file dependencies, and ensuring reproducibility across computing environments. This paper introduces the core concepts of Snakemake, illustrates its advantages within the context of RNA-seq, and provides a working example of a complete RNA-seq pipeline. We also discuss limitations, extensions, and common alternatives, highlighting how Snakemake supports sustainable, transparent, and scalable data analysis for both research and teaching applications.
+
+---
+
+## 2. Introduction: Why Workflow Automation? Why Snakemake?<a name="2"></a>
 Workflow automation uses software to automate repetitive tasks and processes. Rather than sequentially running individual commands and manually tracking file dependencies, parameters, and intermediate outputs, workflow automation ensures that each task is executed in the correct order and with the appropriate inputs. **Snakemake** has become one of the two most widely adopted workflow management systems in computational biology because of its clear syntax, strong emphasis on reproducibility, and ability to scale from single-machine analyses to large high-performance computing environments. Snakemake addresses many limitations inherent to traditional bash pipelines, while providing a robust foundation for sustainable data analysis.
 
 ![alt text](snakemaketraits.png)
@@ -31,18 +38,18 @@ Workflow automation uses software to automate repetitive tasks and processes. Ra
 - **Traceability**: Because every file is produced by a specific rule and command, Snakemake can show exactly how eachoutput was generated (DAG, rulegraph, logs), enabling you to trace results back through all intermediate steps.  
 - **Documentation**: The combination of clear rule names, config files, environment specs, and built-in reporting (ex. `--report`) makes problems easy to diagnose within the workflow.  
 
-## 2. RNA-seq & Typical Pipelines<a name="2"></a>
+## 3. RNA-seq & Typical Pipelines<a name="3"></a>
 RNA sequencing (RNA-seq) is a widely used method for measuring gene expression by profiling the RNA molecules present in a biological sample. In practice, an RNA-seq experiment produces raw sequencing reads in FASTQ format. A standard workflow begins with quality assessment using tools such as FastQC or fastp, followed by optional trimming to remove adapters or low-quality bases. The cleaned reads are then processed either through traditional genome alignment (STAR, HISAT2, Bowtie2) or through faster pseudoalignment approaches (Salmon, Kallisto) that quantify transcript abundance without generating full alignments. Gene- or transcript-level counts are subsequently derived using tools such as featureCounts or tximport, and these counts feed into statistical methods like DESeq2 for differential expression analysis. Outputs typically include normalized expression matrices, diagnostic plots, and multi-sample summaries, often consolidated through MultiQC.
 
 <img src="inclassrnaseqexample.png" alt="alt text" width="200"/>
 
 Although conceptually straightforward, RNA-seq analysis involves many interdependent steps and dozens of intermediate files, making manual execution fragile and difficult to scale. The workflow must also adapt to varying sample numbers, library types, reference genomes, and computational environments. These characteristics make RNA-seq an ideal case for workflow automation: a system like Snakemake provides structure, reproducibility, and scalability by formally defining how each step connects, ensuring that results are generated consistently.
 
-## 3. Snakemake Basics: Rules, DAGs, and Wildcards <a name="3"></a>
+## 4. Snakemake Basics: Rules, DAGs, and Wildcards <a name="4"></a>
 
 Snakemake workflows are built around a simple but powerful idea: instead of explicitly writing out the order of operations, you describe *how files are created from other files*, and Snakemake automatically infers the correct execution order. This is achieved through rules, wildcards, and the construction of a Directed Acyclic Graph (DAG) that defines all necessary steps. 
 
-### 3.0 Getting Started<a name="30"></a>
+### 4.0 Getting Started<a name="40"></a>
 
 #### Installation: Conda
 conda create -n snakemake -c conda-forge -c bioconda snakemake
@@ -87,31 +94,63 @@ snakemake --profile profiles/sge
 #### Running Snakemake on SLURM:
 snakemake --cluster “"sbatch -t {resources.time} -c {threads}" --jobs 50
 
-### 3.1 Rules & `rule all`<a name="31"></a>
+### 4.1 Rules & `rule all`<a name="41"></a>
 
 In Snakemake, **rules** define input and output files, rather than dictating explicit step-by-step execution. Each rule includes fields such as `input`, `output`, `params`, `threads`, `resources`, and a `shell` or `run` block that performs the actual operation. Most workflows also include a top-level **`rule all`** that declares the desired final outputs of the pipeline. Snakemake uses these targets as the endpoint, working backward to determine which intermediate files and rules must be executed. This makes workflows clean, declarative, and highly modular.
 
-### 3.2 DAG Construction & Incremental Runs<a name="32"></a>
+### 4.2 DAG Construction & Incremental Runs<a name="42"></a>
 
 Snakemake uses the relationships between rule inputs and outputs to construct a **Directed Acyclic Graph (DAG)**, where 
 each job is a node and edges represent dependencies. The DAG dictates execution order, enabling Snakemake to run independent jobs in parallel and skip any steps whose outputs are already up to date. Tools such as `--dag`, `--rulegraph`, and `--dry-run` make it easy to visualize or validate the workflow before executing it. For cases where output filenames or counts aren’t known until runtime, Snakemake offers **checkpoints**, which pause DAG creation, inspect dynamic outputs, and then expand the graph accordingly.
 
-### 3.3 Wildcards<a name="33"></a>
+### 4.3 Wildcards<a name="43"></a>
 
 **Wildcards** such as `{sample}` or `{chr}` allow a single rule to operate on multiple files without duplication. Snakemake automatically infers wildcard values based on matching file patterns. For example, if the rule expects an input `mapped_reads/{sample}.bam` and you have a file `mapped_reads/B.bam`, Snakemake assigns `{sample} = B`. Wildcards also work inside shell commands using `{wildcards.sample}`, enabling highly scalable pipelines that adapt seamlessly as sample lists grow. Together with `expand()`, wildcards make batch processing straightforward and maintainable.
 
-### 3.4 Configs, Resources, and Execution Backends <a name="34"></a>
+### 4.4 Configs, Resources, and Execution Backends <a name="44"></a>
 
 Workflows often use a `config.yaml` file to store paths, sample tables, and parameters, making Snakemake portable and easy to reuse across different datasets. Rules can specify resource needs such as threads, memory, and GPUs, and Snakemake schedules jobs efficiently to optimize compute usage. It supports a wide range of execution backends, from local execution to HPC schedulers, Kubernetes, Tibanna, and major cloud platforms without modifying the workflow itself. Reproducibility is strengthened further through per-rule Conda environments and container support, while utilities like `protected()` and `temp()` handle file safety and cleanup. Debugging is facilitated through tools like `--dry-run`, `--dag`, `--rulegraph`, and HTML reports generated via `--report`.
 
 Together, these components form the foundation of Snakemake’s workflow model, enabling clean, scalable, and highly reproducible analyses across diverse computational environments.
 
-## 4. Worked Example: RNA-seq Pipeline in Snakemake<a name="4"></a>
+## 5. Worked Example: RNA-seq Pipeline in Snakemake<a name="5"></a>
 ![alt text](exampledagworkflow.png)
 
-# DROP EXAMPLE SOMEHOW???? NOT SURE HOW WE SHOULD IMPLEMENT THIS
+### 5.0 Simplified Code Example: RNA-seq<a name="50"></a>
+Below is a minimal RNA-seq Snakemake example:
 
-## 5. Limitations, Extensions, and Switching to Snakemake<a name="5"></a>
+```python
+rule all:
+    input:
+        expand("results/quant/{sample}.csv", sample=config["samples"]),
+        "results/multiqc/multiqc_report.html"
+
+rule fastqc:
+    input:  "data/{sample}.fastq.gz"
+    output: "qc/fastqc/{sample}_fastqc.html"
+    shell:
+        "fastqc {input} --outdir qc/fastqc/"
+
+rule align:
+    input:  "data/{sample}.fastq.gz"
+    output: "aligned/{sample}.bam"
+    threads: 8
+    params: index=config["star_index"]
+    shell:
+        "STAR --runThreadN {threads} --genomeDir {params.index} "
+        "--readFilesIn {input} --outFileNamePrefix aligned/{wildcards.sample}."
+
+rule quantify:
+    input:  "aligned/{sample}.bam"
+    output: "results/quant/{sample}.csv"
+    params: gtf=config["gtf"]
+    shell:
+        "salmon quant -t {params.gtf} -l A -a {input} -o results/quant/{wildcards.sample}"
+```
+This very simple example shows the key components of Snakemake, emphasizing on connecting rules via declared inputs and outputs, wildcard generalization, and `rule all` defines final output. 
+
+
+## 6. Limitations, Extensions, and Switching to Snakemake<a name="6"></a>
 Even though Snakemake is powerful, it does come with certain limitations. Checkpoints, while extremely useful for handling dynamic or unknown inputs can be tricky to implement correctly. They require careful planning, and if the logic that determines downstream files is even slightly off, Snakemake may produce a malformed DAG or fail with confusing errors. Another fundamental limitation is that Snakemake workflows must be **acyclic**, meaning you cannot express iterative or recursive algorithms directly in the workflow graph. Any looped or cyclical process must be handled inside a script rather than through Snakemake’s rule structure.
 
 Despite these limitations, Snakemake benefits from a very active community. There are extensive collections of ready-made wrappers (each bundling tools with pinned versions) and complete workflows that cover common analyses like RNA-seq, ChIP-seq, ATAC-seq, variant calling, metagenomics, and more. Many of these are maintained directly by the Snakemake team or by broader bioinformatics groups, which makes it much easier for new users to adopt working Snakemake models without writing pipelines from scratch. It’s also worth highlighting alternatives such as **Nextflow** (the other large workflow management tool designed specifically for computation biology), **CWL**, and **WDL/Cromwell**, which are widely used in other research communities. These workflow engines share many goals: adaptability, transparency, reproducibility, and sustainability, but differ in syntax (programming language), execution models, and strengths.
@@ -120,13 +159,19 @@ Despite these limitations, Snakemake benefits from a very active community. Ther
 
 <img src="snakemakecitationsovertime.png" alt="alt text" width="300"/>
 
-## 6. Further Applications<a name="6"></a>
+## 7. Further Applications<a name="7"></a>
 
 As mentioned previously, snakemake is useful beyond RNA-seq in applications across genomics, single-cell analysis, structural biology, clinical pipelines, teaching, and machine learning. Here are some additional Snakemake pipeline DAGs for alternative pipelines within computational biology:
 
-# ADD HERE ???? NOT SURE IF WE WANT TO
+| Domain | Snakemake Application | Key Features |
+|-------|-----------------------------|--------------|
+| Genomics | ATAC-seq, ChIP-seq, WGS, variant calling | Parallel alignment, large data handling |
+| Single-cell | RNA-seq, ATAC, spatial datasets | Dynamic files, large sample sets |
+| Structural Biology | AlphaFold batch runs | GPU scheduling, environment isolation |
+| Clinical Pipelines | Germline/somatic variant pipelines | Reproducibility, audit trails |
+| Machine Learning | Preprocessing & model training | Checkpoints, incremental builds |
 
-## 7. References<a name="7"></a>
+## 8. References<a name="8"></a>
 [1] Mölder, F., Jablonski, K. P., Letcher, B., Hall, M. B., Tomkins-Tinch, C. H., Sochat, V., *et al.* (2021). 
 **Sustainable data analysis with Snakemake**. *F1000Research*, 10:33.  
     https://pmc.ncbi.nlm.nih.gov/articles/PMC8114187/
