@@ -53,10 +53,10 @@ conda activate snakemake
 ```
 
 #### Installation: Mamba
-
+```bash
 mamba create -n snakemake snakemake -c conda-forge -c bioconda
 mamba activate snakemake
-
+```
 ---
 
 An example minimal Snakemake project contains:
@@ -84,26 +84,29 @@ project/
 ---
 
 #### Running Snakemake (local):
-snakemake --cores 4
-
+```bash
+snakemake --cores 4 --configfile config.yaml
+```
 #### Running Snakemake on HPC:
+```bash
 snakemake --profile profiles/sge
-
+```
 #### Running Snakemake on SLURM:
+```bash
 snakemake --cluster “"sbatch -t {resources.time} -c {threads}" --jobs 50
-
+```
 ### 4.1 Rules & `rule all`<a name="41"></a>
 
-In Snakemake, **rules** define input and output files, rather than dictating explicit step-by-step execution. Each rule includes fields such as `input`, `output`, `params`, `threads`, `resources`, and a `shell` or `run` block that performs the actual operation. Most workflows also include a top-level **`rule all`** that declares the desired final outputs of the pipeline. Snakemake uses these targets as the endpoint, working backward to determine which intermediate files and rules must be executed. This makes workflows clean, declarative, and highly modular.
+In Snakemake, **rules** encapsulate the individual steps of a pipeline by defining an `input` and `output` along with a `shell` option (i.e, to generate the `output` file using the `input` and some other information). The `all` rule is special, but no different. It too contains an `input` and `output`. Snakemake uses the `all` rule as a target, working backward to determine which intermediate files must be generated and rules must be executed to generate the `all` rule's `input`. Furthermore, Snakemake uses the [Python format mini-language](http://docs.python.org/py3k/library/string.html#formatspec) (with strong emphasis on Python f-strings). This results in workflows that are *declarative*: you describe the `input`, `output`, and `shell` script to generate the data but not the order to run the rules; Snakemake determines the runtime execution. This makes workflows understandable, declarative, and highly modular.
 
 ### 4.2 DAG Construction & Incremental Runs<a name="42"></a>
 
 Snakemake uses the relationships between rule inputs and outputs to construct a **Directed Acyclic Graph (DAG)**, where 
-each job is a node and edges represent dependencies. The DAG dictates execution order, enabling Snakemake to run independent jobs in parallel and skip any steps whose outputs are already up to date. Tools such as `--dag`, `--rulegraph`, and `--dry-run` make it easy to visualize or validate the workflow before executing it. For cases where output filenames or counts aren’t known until runtime, Snakemake offers **checkpoints**, which pause DAG creation, inspect dynamic outputs, and then expand the graph accordingly.
+each job is a node and edges represent dependencies. The DAG dictates execution order, enabling Snakemake to run independent jobs in parallel and skip any steps whose outputs are already up to date. Tools such as `--dag`, `--rulegraph`, and `--dry-run` make it easy to visualize or validate the workflow before executing it. For cases where output filenames or counts aren’t known until runtime, Snakemake offers **checkpoints**, which pause DAG creation, inspect dynamic outputs, and then expand the graph accordingly. Usage of this DAG results in workflows that are correct and reproducible, unless the rules are changed. 
 
 ### 4.3 Wildcards<a name="43"></a>
 
-**Wildcards** such as `{sample}` or `{chr}` allow a single rule to operate on multiple files without duplication. Snakemake automatically infers wildcard values based on matching file patterns. For example, if the rule expects an input `mapped_reads/{sample}.bam` and you have a file `mapped_reads/B.bam`, Snakemake assigns `{sample} = B`. Wildcards also work inside shell commands using `{wildcards.sample}`, enabling highly scalable pipelines that adapt seamlessly as sample lists grow. Together with `expand()`, wildcards make batch processing straightforward and maintainable.
+**Wildcards** such as `{sample}` or `{chr}` allow a single rule to operate on multiple files without duplication. Snakemake automatically infers wildcard values based on matching file patterns. For example, if the rule expects an input `mapped_reads/{sample}.bam` and you have a file `mapped_reads/B.bam`, Snakemake assigns `{sample} = B`. Wildcards also work inside shell commands (e.g using `{wildcards.sample}` to infer all of the sample variables), enabling highly scalable pipelines that adapt seamlessly as sample lists grow. Together with `expand()`, wildcards make batch processing straightforward and maintainable.
 
 ### 4.4 Configs, Resources, and Execution Backends <a name="44"></a>
 
