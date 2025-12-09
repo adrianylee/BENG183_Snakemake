@@ -32,10 +32,10 @@ Workflow automation uses software to automate repetitive tasks and processes. Ra
 
 #### **Snakemake is designed to be sustainable, survive interruptions, and evolve with new data and processes**
 - **Automation**: Snakemake automatically figures out which steps to run, in which order, based on declared inputs/outputsand the target files you ask for, instead of manually chaining commands.  
-- **Scalability**: The same Snakefile can scale from a few samples on a laptop to hundreds on an HPC cluster by parallelizing independent rules and adjusting only the execution profile, not the workflow logic or code.
+- **Scalability**: The same Snakefile can scale from a few samples on a laptop to hundreds on an HPC cluster or the cloud by parallelizing independent rules and adjusting only the execution profile, not the workflow logic or code.
 - **Portability**: Per-rule Conda or container definitions let Snakemake pin software and versions, so the exact sameworkflow can run reliably across different machines and compute environments.  
-- **Readability**: Snakemake uses a Pythonic, rule-based syntax where each step is a small, named block (rule) with explicitinput, output, and commands, making complex pipelines easier to understand and review, even to complete beginners.  
-- **Traceability**: Because every file is produced by a specific rule and command, Snakemake can show exactly how eachoutput was generated (DAG, rulegraph, logs), enabling you to trace results back through all intermediate steps.  
+- **Readability**: Snakemake uses a Pythonic, rule-based syntax where each step is a small, named block (rule) with explicit input, output, and commands, making complex pipelines easier to understand and review, even to complete beginners.  
+- **Traceability**: Because every file is produced by a specific rule and command, Snakemake can show exactly how each output was generated (DAG, rulegraph, logs), enabling you to trace results back through all intermediate steps.  
 - **Documentation**: The combination of clear rule names, config files, environment specs, and built-in reporting (ex. `--report`) makes problems easy to diagnose within the workflow.  
 
 ## 3. RNA-seq & Typical Pipelines<a name="3"></a>
@@ -43,7 +43,7 @@ RNA sequencing (RNA-seq) is a widely used method for measuring gene expression b
 
 <img src="inclassrnaseqexample.png" alt="alt text" width="200"/>
 
-Although conceptually straightforward, RNA-seq analysis involves many interdependent steps and dozens of intermediate files, making manual execution fragile and difficult to scale. The workflow must also adapt to varying sample numbers, library types, reference genomes, and computational environments. These characteristics make RNA-seq an ideal case for workflow automation: a system like Snakemake provides structure, reproducibility, and scalability by formally defining how each step connects, ensuring that results are generated consistently.
+Although conceptually straightforward, RNA-seq analysis involves many interdependent steps and dozens of intermediate files, making manual execution (via bash or Jupyter workflows) fragile and difficult to scale. Manual workflows are hard-coded and must be adapted by hand for varying sample numbers, library types, reference genomes, computational environments, paths, and more. These characteristics make RNA-seq an ideal case for workflow automation. A system like Snakemake solves many of the isses that traditional bash pipelining has and ensures that results are generated consistently.
 
 ## 4. Snakemake Basics: Rules, DAGs, and Wildcards <a name="4"></a>
 
@@ -102,12 +102,12 @@ snakemake --cluster “"sbatch -t {resources.time} -c {threads}" --jobs 50
 ```
 ### 4.1 Rules & `rule all`<a name="41"></a>
 
-In Snakemake, **rules** encapsulate the individual steps of a pipeline by defining an `input` and `output` along with a `shell` option (i.e, to generate the `output` file using the `input` and some other information). The `all` rule is special, but no different. It too contains an `input` and `output`. Snakemake uses the `all` rule as a target, working backward to determine which intermediate files must be generated and rules must be executed to generate the `all` rule's `input`. Furthermore, Snakemake uses the [Python format mini-language](http://docs.python.org/py3k/library/string.html#formatspec) (with strong emphasis on Python f-strings). This results in workflows that are *declarative*: you describe the `input`, `output`, and `shell` script to generate the data but not the order to run the rules; Snakemake determines the runtime execution. This makes workflows understandable, declarative, and highly modular.
+In Snakemake, **rules** encapsulate the individual steps of a pipeline by defining an `input` and `output` along with a `shell` option (i.e, to generate the `output` file using the `input` and some other information). The `all` rule is special, but no different conceptually. It too contains an `input` and `output`. Snakemake uses the `all` rule as a target, working backward to determine which intermediate files must be generated and rules must be executed to generate the `all` rule's `input`. Furthermore, Snakemake uses the [Python format mini-language](http://docs.python.org/py3k/library/string.html#formatspec) (with strong emphasis on Python f-strings). This results in workflows that are *declarative*: you describe the `input`, `output`, and `shell` script to generate the data but not the order to run the rules; Snakemake determines the runtime execution. This makes workflows understandable, declarative, and highly modular.
 
 ### 4.2 DAG Construction & Incremental Runs<a name="42"></a>
 
 Snakemake uses the relationships between rule inputs and outputs to construct a **Directed Acyclic Graph (DAG)**, where 
-each job is a node and edges represent dependencies. The DAG dictates execution order, enabling Snakemake to run independent jobs in parallel and skip any steps whose outputs are already up to date. Tools such as `--dag`, `--rulegraph`, and `--dry-run` make it easy to visualize or validate the workflow before executing it. For cases where output filenames or counts aren’t known until runtime, Snakemake offers **checkpoints**, which pause DAG creation, inspect dynamic outputs, and then expand the graph accordingly. Usage of this DAG results in workflows that are correct and reproducible, unless the rules are changed. 
+each job is a node and each dependency is an edge. The DAG dictates execution order, enabling Snakemake to run independent jobs in parallel and skip any steps whose outputs are already up to date. Tools such as `--dag`, `--rulegraph`, and `--dry-run` make it easy to visualize or validate the workflow before executing it. For cases where output filenames or counts aren’t known until runtime, Snakemake offers **checkpoints**, which pause DAG creation, inspect dynamic outputs, and then expand the graph accordingly. Usage of this DAG results in workflows that are correct and reproducible, unless the rules are changed. 
 
 ### 4.3 Wildcards<a name="43"></a>
 
@@ -155,6 +155,7 @@ rule quantify:
 ```
 This very simple example shows the key components of Snakemake, emphasizing on connecting rules via declared inputs and outputs, wildcard generalization, thread specification, and `rule all` defines final output. 
 
+There is a fully fleshed out workflow for RNA sequenching that we wrote for futher reference [here](BENG183_Snakemake/RNAseq_Snakefile) along with the [config](BENG183_Snakemake/RNAseq_config.yaml) and [environments](BENG183_Snakemake/RNAseq_envs.yaml) needed to run the Snakefile.
 
 ## 6. Limitations, Extensions, and Switching to Snakemake<a name="6"></a>
 Even though Snakemake is powerful, it does come with certain limitations. Checkpoints, while extremely useful for handling dynamic or unknown inputs can be tricky to implement correctly. They require careful planning, and if the logic that determines downstream files is even slightly off, Snakemake may produce a malformed DAG or fail with confusing errors. Another fundamental limitation is that Snakemake workflows must be **acyclic**, meaning you cannot express iterative or recursive algorithms directly in the workflow graph. Any looped or cyclical process must be handled inside a script rather than through Snakemake’s rule structure.
