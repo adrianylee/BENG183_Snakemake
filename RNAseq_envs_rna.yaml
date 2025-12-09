@@ -1,0 +1,10 @@
+name: rnaseq
+channels: [conda-forge, bioconda, defaults]
+dependencies:
+ - python=3.10
+ - fastp
+ - fastqc
+ - star=2.7.*
+ - subread  # featureCounts
+ - pigz
+ - salmon=1.10.*
