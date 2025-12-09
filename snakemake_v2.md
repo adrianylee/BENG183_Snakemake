@@ -155,7 +155,7 @@ rule quantify:
 ```
 This very simple example shows the key components of Snakemake, emphasizing on connecting rules via declared inputs and outputs, wildcard generalization, thread specification, and `rule all` defines final output. 
 
-There is a fully fleshed out workflow for RNA sequenching that we wrote for futher reference [here](BENG183_Snakemake/RNAseq_Snakefile) along with the [config](BENG183_Snakemake/RNAseq_config.yaml) and [environments](BENG183_Snakemake/RNAseq_envs.yaml) needed to run the Snakefile.
+There is a fully fleshed out workflow for RNA sequenching that we wrote for futher reference [here](RNAseq_Snakefile) along with the [config](RNAseq_config.yaml) and [environments](RNAseq_envs.yaml) needed to run the Snakefile.
 
 ## 6. Limitations, Extensions, and Switching to Snakemake<a name="6"></a>
 Even though Snakemake is powerful, it does come with certain limitations. Checkpoints, while extremely useful for handling dynamic or unknown inputs can be tricky to implement correctly. They require careful planning, and if the logic that determines downstream files is even slightly off, Snakemake may produce a malformed DAG or fail with confusing errors. Another fundamental limitation is that Snakemake workflows must be **acyclic**, meaning you cannot express iterative or recursive algorithms directly in the workflow graph. Any looped or cyclical process must be handled inside a script rather than through Snakemake’s rule structure.
