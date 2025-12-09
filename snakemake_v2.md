@@ -7,11 +7,12 @@
 2. [Introduction: Why Workflow Automation? Why Snakemake?](#2)  
 3. [RNA-seq & Typical Pipelines](#3)  
 4. [Snakemake Basics: Rules, DAGs, and Wildcards](#4)  
-   3.0. [Getting Started](#40)  
-   3.1. [Rules & `rule all`](#41)  
-   3.2. [DAG Construction & Incremental Runs](#42)  
-   3.3. [Wildcards](#43)  
-   3.4. [Configs, Resources, and Execution Backends](#44)  
+   4.0. [Getting Started](#40)  
+   4.1. [Rules & `rule all`](#41)  
+   &emsp;4.1.1. [The Anatomy of a Rule](#411)
+   4.2. [DAG Construction & Incremental Runs](#42)  
+   4.3. [Wildcards](#43)  
+   4.4. [Configs, Resources, and Execution Backends](#44)  
 5. [Worked Example: RNA-seq Pipeline in Snakemake](#5)  
    5.0. [Simplified Snakefile](#50) 
 6. [Limitations, Extensions, and Switching to Snakemake](#6)  
@@ -31,11 +32,11 @@ Workflow automation uses software to automate repetitive tasks and processes. Ra
 ![alt text](snakemaketraits.png)
 
 #### **Snakemake is designed to be sustainable, survive interruptions, and evolve with new data and processes**
-- **Automation**: Snakemake automatically figures out which steps to run, in which order, based on declared inputs/outputsand the target files you ask for, instead of manually chaining commands.  
+- **Automation**: Snakemake automatically determines which steps to run and in which order based on declared inputs/outputs and the target files of the `all` rule, instead of manually chaining commands.  
 - **Scalability**: The same Snakefile can scale from a few samples on a laptop to hundreds on an HPC cluster by parallelizing independent rules and adjusting only the execution profile, not the workflow logic or code.
-- **Portability**: Per-rule Conda or container definitions let Snakemake pin software and versions, so the exact sameworkflow can run reliably across different machines and compute environments.  
-- **Readability**: Snakemake uses a Pythonic, rule-based syntax where each step is a small, named block (rule) with explicitinput, output, and commands, making complex pipelines easier to understand and review, even to complete beginners.  
-- **Traceability**: Because every file is produced by a specific rule and command, Snakemake can show exactly how eachoutput was generated (DAG, rulegraph, logs), enabling you to trace results back through all intermediate steps.  
+- **Portability**: Per-rule Conda or container definitions let Snakemake pin software and versions, so the exact same workflow can run reliably across different machines and compute environments.  
+- **Readability**: Snakemake uses a Pythonic, rule-based syntax where each step is a small, named block (rule) with explicit input, output, and commands, making complex pipelines easier to understand and review, even to beginners.  
+- **Traceability**: Because every file is produced by a specific rule and command, Snakemake can show exactly how each output was generated (DAG, rulegraph, logs), enabling you to trace results back through all intermediate steps. Furthermore, the specified `input` and `output` in each rule makes it easy to implicitly trace the workflow.
 - **Documentation**: The combination of clear rule names, config files, environment specs, and built-in reporting (ex. `--report`) makes problems easy to diagnose within the workflow.  
 
 ## 3. RNA-seq & Typical Pipelines<a name="3"></a>
@@ -86,6 +87,18 @@ project/
 
 │── results/
 
+### Snakemake Best Practices:
+Before you get started with coding, it's also best to understand the best practices in order to ensure that your workflow adheres to the sustainability principles. *Just because you're using Snakemake doesn't mean that your code will automatically adhere to all those principles. Part of it is still up to ***you*** as the programmer.*
+
+**Code quality and readability:**<br>
+Snakemake comes with a built in linter, which can be invokes with `snakemake --lint`. To format code, there is an automatic formatter called [Snakefmt](https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html#:~:text=Snakemake%20workflows%2C%20called-,Snakefmt,-%2C%20which%20should%20be). Furthermore, file names should be kept short and informative, using either `_` or `-` as separators consistently. **Snakemake also includes many helpful [functions](https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html?__cf_chl_tk=n.ERqqdjt26Z3.4JxkSHqXwHqYvj1FTklnkwlDFFytY-1765315644-1.0.1.1-_4GiciVttAEBFPtzFe3LDZ5j1o5pM5atlDRmeA517os#snakefiles-semantic-helpers) which should be invoked rather than rewritten to avoid reimplementation.**
+
+**Portability:**<br>
+To ensure portability, versioned [Conda](https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html#:~:text=rules%20with%20versioned-,Conda,-or%20container%20based) or [container](https://snakemake.readthedocs.io/en/stable/snakefiles/deployment.html#apptainer)-based software environments should be used. 
+
+**Configurability**<br>
+To ensure configurability, make use of [config files](https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html#:~:text=be%20handled%20via-,config%20files,-and%2C%20if%20needed).
+
 ---
 
 #### Running Snakemake (local):
@@ -104,14 +117,45 @@ snakemake --cluster “"sbatch -t {resources.time} -c {threads}" --jobs 50
 
 In Snakemake, **rules** encapsulate the individual steps of a pipeline by defining an `input` and `output` along with a `shell` option (i.e, to generate the `output` file using the `input` and some other information). The `all` rule is special, but no different. It too contains an `input` and `output`. Snakemake uses the `all` rule as a target, working backward to determine which intermediate files must be generated and rules must be executed to generate the `all` rule's `input`. Furthermore, Snakemake uses the [Python format mini-language](http://docs.python.org/py3k/library/string.html#formatspec) (with strong emphasis on Python f-strings). This results in workflows that are *declarative*: you describe the `input`, `output`, and `shell` script to generate the data but not the order to run the rules; Snakemake determines the runtime execution. This makes workflows understandable, declarative, and highly modular.
 
+### 4.1.1 The Anatomy of a Rule <a name="411"></a>
+
+At its core, a rule should contain an `input`, `output`, and `shell` command block. An example is shown below:
+```python
+rule myrule:    # the name of a rule can also be blank for an anonymous rule
+    input:
+        "path/to/inputfile",
+        "path/to/other/inputfile",
+    output:
+        "path/to/outputfile",
+        "path/to/another/outputfile",
+    shell:
+        "somecommand {input} {output}" # snakemake uses Python's mini-format language
+```
+**Rule properties:**<br>
+`input`: The files or data this rule depends on. This can be in the form of strings, lists, dictionaries, functions, or anonymous lambda functions.<br>
+`output`: The files this rule creates. Can use special wrappers.<br>
+&emsp;`temp(file)`: deletes this file after consumption.<br>
+&emsp;`protected(file)`: prevents accidental overwriting.<br>
+&emsp;`directory(dir)`: instead of formulating the rule from individual files, uses a directory instead.<br>
+&emsp;`touch(file)`: update the timestamp of a file, commonly used for flag files when a rule doesn't create a specific file upon completion.<br>
+`shell`: The command line execution for this rule.<br>
+`params`: additional, non-DAG related parameters (e.g. .BED annotation files, reference sequences)<br>
+`threads`: The number of CPU threads allotted to this rule. Used by Snakemake for scheduling.<br>
+`resources`: Used by Snakemake to enforce scheduling limits and prevent overloading system or cluster resources.<br>
+`conda`: Assign this rule a specific Conda environment.<br>
+`group`: Group rules under the same group name to run as a single HPC job.<br>
+`priority`: Set the priority of a rule (higher is better). This is useful for resolving conflicts if two rules create the same output(s).<br>
+`log`: The file where `stdout` or `stderr` should be saved.<br>
+
+
 ### 4.2 DAG Construction & Incremental Runs<a name="42"></a>
 
 Snakemake uses the relationships between rule inputs and outputs to construct a **Directed Acyclic Graph (DAG)**, where 
-each job is a node and edges represent dependencies. The DAG dictates execution order, enabling Snakemake to run independent jobs in parallel and skip any steps whose outputs are already up to date. Tools such as `--dag`, `--rulegraph`, and `--dry-run` make it easy to visualize or validate the workflow before executing it. For cases where output filenames or counts aren’t known until runtime, Snakemake offers **checkpoints**, which pause DAG creation, inspect dynamic outputs, and then expand the graph accordingly. Usage of this DAG results in workflows that are correct and reproducible, unless the rules are changed. 
+each job is a node and edges represent dependencies. The DAG dictates execution order, enabling Snakemake to run independent jobs in parallel and skip any steps whose outputs are already up to date. To do this, Snakemake uses the `input` and `output` of each rule to infer rule dependencies and targets, and ultimately execution order. Tools such as `--dag`, `--rulegraph`, and `--dry-run` make it easy to visualize or validate the workflow before executing it. For cases where output filenames or counts aren’t known until runtime, Snakemake offers **checkpoints**, which pause DAG creation, inspect dynamic outputs, and then expand the graph accordingly. Usage of this DAG results in workflows that are correct and reproducible, unless the rules are changed. 
 
 ### 4.3 Wildcards<a name="43"></a>
 
-**Wildcards** such as `{sample}` or `{chr}` allow a single rule to operate on multiple files without duplication. Snakemake automatically infers wildcard values based on matching file patterns. For example, if the rule expects an input `mapped_reads/{sample}.bam` and you have a file `mapped_reads/B.bam`, Snakemake assigns `{sample} = B`. Wildcards also work inside shell commands (e.g using `{wildcards.sample}` to infer all of the sample variables), enabling highly scalable pipelines that adapt seamlessly as sample lists grow. Together with `expand()`, wildcards make batch processing straightforward and maintainable.
+**Wildcards** such as `{sample}` or `{chr}` allow a single rule to operate on multiple files without duplication. Snakemake automatically infers wildcard values based on matching file patterns. For example, if the rule expects an input `mapped_reads/{sample}.bam` and you have a file `mapped_reads/B.bam`, Snakemake assigns `{sample} = B`. Wildcards can also be used in combinations, e.g. as `{samplefolders}/{sample}.bam`. Wildcards also work inside shell commands (e.g using `{wildcards.sample}` to infer all of the sample variables), enabling highly scalable pipelines that adapt seamlessly as sample lists grow. Together with `expand()`, wildcards make batch processing straightforward and maintainable.
 
 ### 4.4 Configs, Resources, and Execution Backends <a name="44"></a>
 
@@ -186,3 +230,8 @@ As mentioned previously, snakemake is useful beyond RNA-seq in applications acro
     https://snakemake.readthedocs.io/en/stable/
 
 [3] M. tuberculosis Bioinformatics Workshop. (2018). Welcome to bioinformatics workshop for M. tuberculosis genomics and phylogenomics at the Philippine Genome Center. https://mtbgenomicsworkshop.readthedocs.io/en/latest/index.html
+
+[4] string — Common string operations. (n.d.). Python Documentation. https://docs.python.org/3/library/string.html#formatspec
+
+‌[5] 7. Input and Output — Python 3.8.6 documentation. (n.d.). Python Documentation. https://docs.python.org/3/tutorial/inputoutput.html
+
