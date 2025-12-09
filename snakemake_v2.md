@@ -123,7 +123,7 @@ Together, these components form the foundation of Snakemake’s workflow model, 
 ![alt text](exampledagworkflow.png)
 
 ### 5.0 Simplified Code Example: RNA-seq<a name="50"></a>
-Below is a minimal RNA-seq Snakemake example:
+Below is a sample minimal RNA-seq Snakemake example:
 
 ```python
 rule all:
@@ -153,7 +153,7 @@ rule quantify:
     shell:
         "salmon quant -t {params.gtf} -l A -a {input} -o results/quant/{wildcards.sample}"
 ```
-This very simple example shows the key components of Snakemake, emphasizing on connecting rules via declared inputs and outputs, wildcard generalization, and `rule all` defines final output. 
+This very simple example shows the key components of Snakemake, emphasizing on connecting rules via declared inputs and outputs, wildcard generalization, thread specification, and `rule all` defines final output. 
 
 
 ## 6. Limitations, Extensions, and Switching to Snakemake<a name="6"></a>
@@ -167,9 +167,9 @@ Despite these limitations, Snakemake benefits from a very active community. Ther
 
 ## 7. Further Applications<a name="7"></a>
 
-As mentioned previously, snakemake is useful beyond RNA-seq in applications across genomics, single-cell analysis, structural biology, clinical pipelines, teaching, and machine learning. Here are some additional Snakemake pipeline DAGs for alternative pipelines within computational biology:
+As mentioned previously, snakemake is useful beyond RNA-seq in applications across genomics, single-cell analysis, structural biology, clinical pipelines, teaching, and machine learning. Here is a basic table with possible applications where Snakemake could be useful and the features that are most helpful to them. 
 
-| Domain | Snakemake Application | Key Features |
+| Domain | Snakemake Application | Helpful Snakemake Features |
 |-------|-----------------------------|--------------|
 | Genomics | ATAC-seq, ChIP-seq, WGS, variant calling | Parallel alignment, large data handling |
 | Single-cell | RNA-seq, ATAC, spatial datasets | Dynamic files, large sample sets |
