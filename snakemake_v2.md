@@ -44,7 +44,7 @@ RNA sequencing (RNA-seq) is a widely used method for measuring gene expression b
 
 <img src="inclassrnaseqexample.png" alt="alt text" width="200"/>
 
-Although conceptually straightforward, RNA-seq analysis involves many interdependent steps and dozens of intermediate files, making manual execution fragile and difficult to scale. The workflow must also adapt to varying sample numbers, library types, reference genomes, and computational environments. These characteristics make RNA-seq an ideal case for workflow automation: a system like Snakemake provides structure, reproducibility, and scalability by formally defining how each step connects, ensuring that results are generated consistently.
+Although conceptually straightforward, RNA-seq analysis involves many interdependent steps and dozens of intermediate files, making manual execution (via bash or Jupyter workflows) fragile and difficult to scale. Manual workflows are hard-coded and must be adapted by hand for varying sample numbers, library types, reference genomes, computational environments, paths, and more. These characteristics make RNA-seq an ideal case for workflow automation. A system like Snakemake solves many of the isses that traditional bash pipelining has and ensures that results are generated consistently.
 
 ## 4. Snakemake Basics: Rules, DAGs, and Wildcards <a name="4"></a>
 
@@ -115,7 +115,7 @@ snakemake --cluster “"sbatch -t {resources.time} -c {threads}" --jobs 50
 ```
 ### 4.1 Rules & `rule all`<a name="41"></a>
 
-In Snakemake, **rules** encapsulate the individual steps of a pipeline by defining an `input` and `output` along with a `shell` option (i.e, to generate the `output` file using the `input` and some other information). The `all` rule is special, but no different. It too contains an `input` and `output`. Snakemake uses the `all` rule as a target, working backward to determine which intermediate files must be generated and rules must be executed to generate the `all` rule's `input`. Furthermore, Snakemake uses the [Python format mini-language](http://docs.python.org/py3k/library/string.html#formatspec) (with strong emphasis on Python f-strings). This results in workflows that are *declarative*: you describe the `input`, `output`, and `shell` script to generate the data but not the order to run the rules; Snakemake determines the runtime execution. This makes workflows understandable, declarative, and highly modular.
+In Snakemake, **rules** encapsulate the individual steps of a pipeline by defining an `input` and `output` along with a `shell` option (i.e, to generate the `output` file using the `input` and some other information). The `all` rule is special, but no different conceptually. It too contains an `input` and `output`. Snakemake uses the `all` rule as a target, working backward to determine which intermediate files must be generated and rules must be executed to generate the `all` rule's `input`. Furthermore, Snakemake uses the [Python format mini-language](http://docs.python.org/py3k/library/string.html#formatspec) (with strong emphasis on Python f-strings). This results in workflows that are *declarative*: you describe the `input`, `output`, and `shell` script to generate the data but not the order to run the rules; Snakemake determines the runtime execution. This makes workflows understandable, declarative, and highly modular.
 
 ### 4.1.1 The Anatomy of a Rule <a name="411"></a>
 
@@ -199,11 +199,12 @@ rule quantify:
 ```
 This very simple example shows the key components of Snakemake, emphasizing on connecting rules via declared inputs and outputs, wildcard generalization, thread specification, and `rule all` defines final output. 
 
+There is a fully fleshed out workflow for RNA sequenching that we wrote for futher reference [here](RNAseq_Snakefile) along with the [config](RNAseq_config.yaml) and [environments](RNAseq_envs.yaml) needed to run the Snakefile.
 
 ## 6. Limitations, Extensions, and Switching to Snakemake<a name="6"></a>
 Even though Snakemake is powerful, it does come with certain limitations. Checkpoints, while extremely useful for handling dynamic or unknown inputs can be tricky to implement correctly. They require careful planning, and if the logic that determines downstream files is even slightly off, Snakemake may produce a malformed DAG or fail with confusing errors. Another fundamental limitation is that Snakemake workflows must be **acyclic**, meaning you cannot express iterative or recursive algorithms directly in the workflow graph. Any looped or cyclical process must be handled inside a script rather than through Snakemake’s rule structure.
 
-Despite these limitations, Snakemake benefits from a very active community. There are extensive collections of ready-made wrappers (each bundling tools with pinned versions) and complete workflows that cover common analyses like RNA-seq, ChIP-seq, ATAC-seq, variant calling, metagenomics, and more. Many of these are maintained directly by the Snakemake team or by broader bioinformatics groups, which makes it much easier for new users to adopt working Snakemake models without writing pipelines from scratch. It’s also worth highlighting alternatives such as **Nextflow** (the other large workflow management tool designed specifically for computation biology), **CWL**, and **WDL/Cromwell**, which are widely used in other research communities. These workflow engines share many goals: adaptability, transparency, reproducibility, and sustainability, but differ in syntax (programming language), execution models, and strengths.
+Despite these limitations, Snakemake benefits from a very active community. There are [extensive collections of ready-made wrappers](https://snakemake-wrappers.readthedocs.io/en/stable/) (each bundling tools with pinned versions) and complete workflows that cover common analyses like RNA-seq, ChIP-seq, ATAC-seq, variant calling, metagenomics, and more. Many of these are maintained directly by the Snakemake team or by broader bioinformatics groups, which makes it much easier for new users to adopt working Snakemake models without writing pipelines from scratch. It’s also worth highlighting alternatives such as **Nextflow** (the other large workflow management tool designed specifically for computation biology), **CWL**, and **WDL/Cromwell**, which are widely used in other research communities. These workflow engines share many goals: adaptability, transparency, reproducibility, and sustainability, but differ in syntax (programming language), execution models, and strengths.
 
 **Snakemake** stands out among some of the others because of its accessibility and smooth learning curve. Analyses of workflow complexity show that the majority of lines in a typical Snakefile fall into **complexity level 1**, simple rule declarations or keyword–colon structures, while only a small fraction reach **complexity level 7**, which corresponds to full Python expressions. In practice, this means that users can build functional, well-structured workflows without needing extensive programming experience, and only incorporate more advanced Python logic as their projects grow. This balance of simplicity and extensibility makes Snakemake particularly well-suited for teaching, onboarding new lab members, and maintaining long-term sustainable workflows.
 
@@ -222,12 +223,9 @@ As mentioned previously, snakemake is useful beyond RNA-seq in applications acro
 | Machine Learning | Preprocessing & model training | Checkpoints, incremental builds |
 
 ## 8. References<a name="8"></a>
-[1] Mölder, F., Jablonski, K. P., Letcher, B., Hall, M. B., Tomkins-Tinch, C. H., Sochat, V., *et al.* (2021). 
-**Sustainable data analysis with Snakemake**. *F1000Research*, 10:33.  
-    https://pmc.ncbi.nlm.nih.gov/articles/PMC8114187/
+[1] Mölder F, Jablonski KP, Letcher B, Hall MB, van Dyken PC, Tomkins-Tinch CH, Sochat V, Forster J, Vieira FG, Meesters C, Lee S, Twardziok SO, Kanitz A, VanCampen J, Malladi V, Wilm A, Holtgrewe M, Rahmann S, Nahnsen S, Köster J. Sustainable data analysis with Snakemake. F1000Res. 2021 Jan 18;10:33. doi: 10.12688/f1000research.29032.3. PMID: 34035898; PMCID: PMC8114187.
 
-[2] **Snakemake Documentation**.  
-    https://snakemake.readthedocs.io/en/stable/
+[2] Köster, Johannes and Rahmann, Sven. “Snakemake - A scalable bioinformatics workflow engine”. Bioinformatics 2012
 
 [3] M. tuberculosis Bioinformatics Workshop. (2018). Welcome to bioinformatics workshop for M. tuberculosis genomics and phylogenomics at the Philippine Genome Center. https://mtbgenomicsworkshop.readthedocs.io/en/latest/index.html
 

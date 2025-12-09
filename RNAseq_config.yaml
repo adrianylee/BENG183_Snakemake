@@ -1,0 +1,30 @@
+# === Paths ===
+outdir: "dir/rna_seq/output"
+ref:
+ human:
+   transcriptome_fa: "/reference/gencode.v48.transcripts.fa.gz"   # GENCODE FASTA, transcriptome (decoy)
+   genome_fa: "/reference/GRCh38.primary_assembly.genome.fa.gz"   # GENCODE FASTA, genome (decoy)
+   salmon_index: "/reference/salmon_index"                         # will be created if missing
+   gtf: "/reference/gencode.v48.annotation.gtf"
+   tx2gene: "/reference/tx2gene.gencode.v48.csv"                         # will be created if missing
+
+
+# === Library settings ===
+paired_end: true
+strandedness: 0   # featureCounts: 0=unstranded, 1=fr-stranded (forward), 2=rf-stranded (reverse)
+
+
+# === Resources ===
+threads:
+ fastp: 4
+ fastqc: 2
+ salmon_index: 32
+ salmon: 20
+
+
+# === Trimming ===
+do_trimming: true
+
+
+# === Samples file ===
+samples_tsv: "kpc_samples.tsv" # original is samples.tsv
