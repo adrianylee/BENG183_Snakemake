@@ -178,11 +178,8 @@ As mentioned previously, snakemake is useful beyond RNA-seq in applications acro
 | Machine Learning | Preprocessing & model training | Checkpoints, incremental builds |
 
 ## 8. References<a name="8"></a>
-[1] Mölder, F., Jablonski, K. P., Letcher, B., Hall, M. B., Tomkins-Tinch, C. H., Sochat, V., *et al.* (2021). 
-**Sustainable data analysis with Snakemake**. *F1000Research*, 10:33.  
-    https://pmc.ncbi.nlm.nih.gov/articles/PMC8114187/
+[1] Mölder F, Jablonski KP, Letcher B, Hall MB, van Dyken PC, Tomkins-Tinch CH, Sochat V, Forster J, Vieira FG, Meesters C, Lee S, Twardziok SO, Kanitz A, VanCampen J, Malladi V, Wilm A, Holtgrewe M, Rahmann S, Nahnsen S, Köster J. Sustainable data analysis with Snakemake. F1000Res. 2021 Jan 18;10:33. doi: 10.12688/f1000research.29032.3. PMID: 34035898; PMCID: PMC8114187.
 
-[2] **Snakemake Documentation**.  
-    https://snakemake.readthedocs.io/en/stable/
+[2] Köster, Johannes and Rahmann, Sven. “Snakemake - A scalable bioinformatics workflow engine”. Bioinformatics 2012
 
-[3] M. tuberculosis Bioinformatics Workshop. (2018). Welcome to bioinformatics workshop for M. tuberculosis genomics and phylogenomics at the Philippine Genome Center. https://mtbgenomicsworkshop.readthedocs.io/en/latest/index.html
+[3] Karaoz, U. (2018, July). Welcome to bioinformatics workshop for M. tuberculosis genomics and phylogenomics at the Philippine Genome Center (July 9-14 2018)¶. M. tuberculosis Genomics Workshop. https://mtbgenomicsworkshop.readthedocs.io/en/latest/index.html 
